@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width" >
+    <title>文件详情</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/weui/1.1.3/style/weui.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/jquery-weui/1.2.1/css/jquery-weui.min.css">
+
+</head>
+<body>
+
+    <!--<div class="title" style="text-align: center">-->
+        <!--<span><input type="button" name="Submit" value="<" onclick="javascript:window.history.back();"/><p style="display:inline-block;">文件详情</p></span>-->
+    <!--</div>-->
+    <div class="weui-search-bar" id="searchBar">
+        <form class="weui-search-bar__form" onkeydown="if(event.keyCode==13) return false;">
+            <div class="weui-search-bar__box" >
+                <i class="weui-icon-search"></i>
+                <input type="search" class="weui-search-bar__input" id="searchInput" placeholder="搜索" required="" >
+                <a href="javascript:clear()" class="weui-icon-clear" id="searchClear"></a>
+            </div>
+            <label class="weui-search-bar__label" id="searchText">
+                <i class="weui-icon-search"></i>
+                <span>搜索</span>
+            </label>
+        </form>
+        <a href="javascript:cancel()" class="weui-search-bar__cancel-btn" id="searchCancel">取消</a>
+    </div>
+    <div id="main">
+
+    </div>
+
+
+
+
+
+
+    <script src="https://cdn.bootcss.com/jquery/1.11.0/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery-weui/1.2.1/js/jquery-weui.min.js"></script>
+</body>
+<script>
+
+
+    function getQueryVariable(variable)
+    {
+        var query = window.location.search.substring(1);
+        var vars = query.split("&");
+        for (var i=0;i<vars.length;i++) {
+            var pair = vars[i].split("=");
+            if(pair[0] == variable){return pair[1];}
+        }
+        return(false);
+    }
+
+
+    var fileName=getQueryVariable("fileName")
+
+    function getRootPath_web() {
+        var curWwwPath = window.document.location.href;
+        // 获取主机地址之后的目录，如： uimcardprj/share/meun.jsp
+        var pathName = window.document.location.pathname;
+        var pos = curWwwPath.lastIndexOf(pathName);
+        // 获取主机地址，如： http://localhost:8083
+        var localhostPaht = curWwwPath.substring(0, pos);
+        // 获取带"/"的项目名，如：/uimcardprj
+        var indexC = pathName.substr(1).indexOf('/') + 1;
+        //ngix时 避免目录名后缺少/ 增加以下逻辑判断
+        var projectName = "";
+        if (indexC == 0) {
+            var projectName = pathName.substring(0);
+        } else {
+            var projectName = pathName.substring(0, pathName.substr(1)
+                .indexOf('/') + 1);
+        }
+        return (localhostPaht + projectName);
+    }
+    var rootPath = getRootPath_web();
+    $.ajax(
+        {
+            type : "post",
+            //todo
+            //rootPath + "/fileController/recordDataGrid?fileName="+[[${fileName}]]"
+            url : rootPath + "/recordshow?fileName="+'[[${fileName}]]',
+            async : true,
+            //data:{fileName:fileName},
+            dataType : "json",
+            success : function(data)
+            {
+                var isLoading=false
+                var Root = $('<div></div>');
+                for (let i = 0; i < data.length; i++) {
+                    var src=data[i].src
+
+                        if (src == "Rdr") {
+                            var root = $('<div  class="sectionA weui-form-preview"></div>');
+                        } else {
+                            var root = $('<div  class="sectionB weui-form-preview"></div>');
+                        }
+                        var root1 = $('<div class="indexClass weui-form-preview__hd"></div>')
+                        var root11 = $('<div class="weui-form-preview__hd"></div>')
+                        var root2 = $('<label class="weui-form-preview__label"></label>')
+                        var root3 = $('<em class="myclass weui-form-preview__value"></em>')
+                        var root4 = $('<div class="weui-form-preview__bd"></div>')
+                        var root5 = $('<div class="weui-form-preview__item"></div>')
+                        var root6 = $(' <label class="weui-form-preview__label">时间间隔</label>')
+                        var root7 = $('<span class="weui-form-preview__value"></span>')
+                        var rootLoad = $('<div id="loading" class="weui-loadmore"></div>')
+                        root2.append(data[i].sid)
+                        root3.append(data[i].data)
+                        root1.append(root2)
+                        root11.append(root3)
+                        root7.append("指令间隔(ms)" + " " + data[i].interval/1000)
+                        root4.append(root5)
+                        //root5.append(root6)
+                        root5.append(root7)
+                        root.append(root1)
+                        root.append(root11)
+                        root.append(root4)
+                        Root.append(root)
+
+                    }
+
+
+
+
+
+                $("#main").html(Root);
+
+            },
+            error : function(data)
+            {
+                eval(data.responseText);
+            }
+        });
+
+
+
+
+
+
+    $(document.body).infinite(50);
+
+    var loading = false;  //状态标记
+    $(document.body).infinite().on("infinite", function() {
+        if(loading) return;
+        loading = true;
+        setTimeout(function() {
+            $("#list").append("<p> 我是新加载的内容 </p>");
+            loading = false;
+        }, 1500);   //模拟延迟
+    });
+
+
+    $('#searchInput').bind('input propertychange', function() {
+        var text = $("#searchInput").val();
+        var reg = new RegExp("[1-3]", "g");
+        if (reg.test(text)) {
+            $('.weui-cell').each(function () {
+                var $self = $(this);
+                var flag = $self.text().search(text)
+                if (flag > -1) {
+                    $self.css("display", "");
+
+                } else {
+                    $self.css("display", "none");
+
+                }
+            });
+        }
+    });
+
+
+    function cancel(){
+        $('.weui-cell').css("display","")
+
+    }
+
+    function clear(){
+        $('#searchInput').val('')
+        $('.weui-cell').css("display", "")
+    }
+
+    function loadMore(isLoading) {
+
+        var $self = $('#loading')
+            $self.html('<i class="weui-loading"></i><span class="weui-loadmore__tips">正在加载</span>')
+            setTimeout(function () {
+                $self.css("display","none")
+            },1000)
+
+        isLoading=false
+
+
+    }
+
+
+</script>
+<style>
+
+    body{
+        background: #efeff4;
+    }
+    .title{
+        padding: 10px;
+        /*text-align:center;*/
+        font-size: 16px;
+        background: white;
+    }
+    .title p{
+        text-align: center;
+    }
+    .title input{
+        position: fixed;
+        left: 12px;
+        top: 12px;
+
+    }
+
+
+
+    #main {
+        background: #efeff4;
+        font-size: x-small;
+
+    }
+
+    .indexClass{
+        height: 20px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+
+
+    .weui-form-preview__bd{
+        padding: 2px 10px;
+    }
+
+    .sectionA{
+        background: #feffd3;
+        margin-bottom: 10px;
+        margin-right: 9px;
+        margin-left: 9px;
+        padding: 5px;
+        border-radius: 20px;
+    }
+    .sectionB{
+        /*background: #def6ff;*/
+        margin-bottom: 10px;
+        margin-right: 9px;
+        margin-left: 9px;
+        padding: 5px;
+        border-radius: 15px;
+    }
+    .myclass{
+       font-size: 14px;
+    }
+    
+</style>
+</html>
